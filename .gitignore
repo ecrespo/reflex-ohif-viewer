@@ -229,3 +229,8 @@ assets/external/
 # uv lock file. A library pins nothing, so this stays a local artifact;
 # remove this line if you would rather pin the dev environment in git.
 uv.lock
+Claude outputs/
+
+
+# JetBrains IDE settings
+.idea/
