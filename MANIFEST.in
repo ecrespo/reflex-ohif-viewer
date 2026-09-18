@@ -1,0 +1,13 @@
+# The wheel takes its extra files from [tool.setuptools.package-data]; the sdist
+# needs them named here as well, along with the documentation a source release
+# should carry.
+include README.md
+include CHANGELOG.md
+include LICENSE
+include SECURITY.md
+include CONTRIBUTING.md
+recursive-include custom_components/reflex_ohif_viewer *.js *.jsx *.pyi
+include custom_components/reflex_ohif_viewer/py.typed
+recursive-exclude custom_components *.egg-info
+prune ohif_viewer_demo/.web
+prune ohif_viewer_demo/.states

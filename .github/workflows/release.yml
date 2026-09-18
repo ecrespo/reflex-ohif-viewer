@@ -1,0 +1,197 @@
+# Release: build the distribution, publish it to PyPI and open a GitHub Release.
+#
+# Triggered by pushing a tag of the form v1.2.3 to main. Nothing here reads a
+# long-lived credential: PyPI authenticates the workflow through OpenID Connect
+# (Trusted Publishing), so the only thing to configure is the publisher entry on
+# PyPI itself — see the "Publishing" section of CONTRIBUTING.md.
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Existing tag to release, e.g. v0.1.0"
+        required: true
+        type: string
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Verify the tag
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      # A tag that disagrees with pyproject.toml would publish a version nobody
+      # can find again, and PyPI will not let it be replaced.
+      - name: The tag, pyproject.toml and the changelog must agree
+        id: version
+        run: |
+          tag="${{ inputs.tag || github.ref_name }}"
+          version="${tag#v}"
+          declared=$(python -c "
+          import tomllib, pathlib
+          print(tomllib.loads(pathlib.Path('pyproject.toml').read_text())['project']['version'])
+          ")
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+          if [ "$version" != "$declared" ]; then
+            echo "::error::Tag $tag implies version $version, but pyproject.toml declares $declared."
+            exit 1
+          fi
+          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [$version]' section."
+            exit 1
+          fi
+          echo "Releasing $version."
+
+  build:
+    name: Build the distribution
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      # The tagged commit is released, not the commit CI last saw, so the
+      # checks run again here against exactly what is about to be published.
+      - name: Install the project
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+
+      - name: Test
+        run: pytest -q
+
+      - name: Build
+        run: |
+          rm -rf dist
+          python -m build
+
+      - name: twine check
+        run: twine check --strict dist/*
+
+      - name: Upload the distribution
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+          retention-days: 90
+
+  pypi:
+    name: Publish to PyPI
+    needs: [verify, build]
+    runs-on: ubuntu-latest
+    # The environment is what makes Trusted Publishing work and is also where a
+    # required reviewer can be added to gate the upload.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/reflex-ohif-viewer
+    permissions:
+      # Mints the short-lived OIDC token PyPI exchanges for an upload token.
+      id-token: write
+    steps:
+      - name: Download the distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          attestations: true
+          print-hash: true
+
+  github-release:
+    name: Publish the GitHub Release
+    needs: [verify, build, pypi]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.tag || github.ref }}
+          fetch-depth: 0
+
+      - name: Download the distribution
+        uses: actions/download-artifact@v4
+        with:
+          name: release-dist
+          path: dist/
+
+      # The release notes are the changelog section for this version, so the
+      # changelog stays the single place a change is described.
+      - name: Extract the changelog section
+        run: |
+          python - <<'PY' > release-notes.md
+          import pathlib
+          import re
+
+          version = "${{ needs.verify.outputs.version }}"
+          text = pathlib.Path("CHANGELOG.md").read_text()
+          match = re.search(
+              rf"^## \[{re.escape(version)}\].*?$(.*?)(?=^## \[|\Z)",
+              text,
+              re.MULTILINE | re.DOTALL,
+          )
+          body = match.group(1).strip() if match else ""
+          print(body or f"Release {version}.")
+          PY
+          cat >> release-notes.md <<'MD'
+
+          ---
+
+          ```bash
+          pip install reflex-ohif-viewer==VERSION
+          ```
+
+          Published to PyPI from this tag by `.github/workflows/release.yml`
+          using Trusted Publishing, with build attestations attached.
+          MD
+          sed -i "s/VERSION/${{ needs.verify.outputs.version }}/" release-notes.md
+
+      - name: Create the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ needs.verify.outputs.tag }}" \
+            --title "${{ needs.verify.outputs.tag }}" \
+            --notes-file release-notes.md \
+            --verify-tag \
+            dist/*
