@@ -216,3 +216,16 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Reflex
+.web/
+assets/external/
+.states/
+*.db
+
+# Local virtualenv used while developing the component
+.venv/
+
+# uv lock file. A library pins nothing, so this stays a local artifact;
+# remove this line if you would rather pin the dev environment in git.
+uv.lock

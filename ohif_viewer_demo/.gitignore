@@ -1,0 +1,9 @@
+# Reflex build output and runtime state
+.web/
+.states/
+assets/external/
+reflex.lock/
+*.db
+
+__pycache__/
+*.py[cod]
