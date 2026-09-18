@@ -93,7 +93,7 @@ jobs:
       # tests/test_url_builder_parity.py runs the JavaScript URL builder under
       # Node and compares it against the Python one. Without Node it skips
       # itself, which would quietly stop checking that the two agree.
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
