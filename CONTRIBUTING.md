@@ -28,7 +28,11 @@ python -m build && twine check dist/*     # the artifacts PyPI will get
 
 ## Branching and releases
 
-- `main` is the released branch and is protected. Nothing lands on it directly.
+- `main` is the released branch and is protected: no direct pushes, no force
+  pushes, no deletion, and every one of the CI, security and CodeQL checks has
+  to be green before a pull request can merge. A pull request is required but an
+  approving review is not, so a solo maintainer is not locked out; the branch
+  also has to be up to date with `main` before it merges.
 - `develop` is the integration branch. Open your pull request against it.
 - A release is a pull request from `develop` to `main`, then a `vX.Y.Z` tag on
   `main`. The tag is what triggers `.github/workflows/release.yml`, which builds
@@ -60,8 +64,11 @@ the *pending publisher* form — the project does not exist on PyPI yet):
 | Environment name | `pypi` |
 
 The `pypi` environment also has to exist in this repository, under
-*Settings → Environments*. Add a required reviewer to it if you want a human to
-approve every upload; the workflow will wait on it.
+*Settings → Environments*. It is restricted to a `v*.*.*` tag deployment branch
+policy, so nothing but a version tag can reach it — a run from a branch cannot
+publish even if the workflow were changed to try. Add a required reviewer to the
+environment if you want a human to approve every upload; the workflow will wait
+on it.
 
 To cut a release:
 
