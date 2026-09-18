@@ -33,6 +33,16 @@ from .constants import OHIF_WORKLIST_KEYS
 
 __all__ = ["OhifViewer", "build_ohif_url", "ohif_viewer"]
 
+# Viewer parameters whose OHIF query key is spelled exactly like the Python
+# prop, so there is nothing to rename. Note that `token` names a *parameter*;
+# the credential is whatever the caller binds to the prop of that name.
+_UNRENAMED_VIEWER_PARAMS: tuple[str, ...] = (
+    "token",
+    "customization",
+    "theme",
+    "multimonitor",
+)
+
 # Query keys OHIF reads on the viewer routes, mapped from Python prop names.
 # Sourced from platform/app/src/routes/Mode/Mode.tsx and defaultRouteInit.ts.
 _VIEWER_PARAMS: dict[str, str] = {
@@ -40,13 +50,10 @@ _VIEWER_PARAMS: dict[str, str] = {
     "initial_sop_instance_uid": "initialSopInstanceUID",
     "hanging_protocol_id": "hangingProtocolId",
     "stage_id": "stageId",
-    "token": "token",
-    "customization": "customization",
-    "theme": "theme",
     "use_next_viewports": "useNextViewports",
     "viewport_rendering": "viewportRendering",
-    "multimonitor": "multimonitor",
     "screen_number": "screenNumber",
+    **{name: name for name in _UNRENAMED_VIEWER_PARAMS},
 }
 
 
@@ -263,6 +270,12 @@ class OhifViewer(rx.Component):
 
     # ``cpu``, ``webgl``, ``auto`` or a backend id.
     viewport_rendering: rx.Var[str] = rx.Var.create("")
+
+    # Multi-monitor layout id, e.g. ``split`` or a registered custom layout.
+    multimonitor: rx.Var[str] = rx.Var.create("")
+
+    # Which screen of the ``multimonitor`` layout this frame shows.
+    screen_number: rx.Var[str] = rx.Var.create("")
 
     # Extra query parameters, merged last.
     extra_params: rx.Var[dict[str, str]] = rx.Var.create({})

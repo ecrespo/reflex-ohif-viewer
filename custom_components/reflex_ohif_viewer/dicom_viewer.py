@@ -14,6 +14,7 @@ prerender pass.
 
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 import reflex as rx
@@ -23,7 +24,6 @@ from ._assets import dicom_viewer_library
 from .constants import (
     ALL_TOOLS,
     CORNERSTONE_PACKAGES,
-    DEFAULT_TOOLS,
     WINDOW_PRESETS,
 )
 
@@ -289,18 +289,30 @@ dicom_viewer = DicomViewer.create
 # it, so a backend event handler can drive the viewport without a round trip
 # through props.
 
+#: ``viewport_id`` and the arguments are JSON-encoded on their way into the
+#: generated script, but a method name is a property access and cannot be.
+#: It is therefore restricted to a plain identifier instead.
+_JS_IDENTIFIER = re.compile(r"[A-Za-z_$][A-Za-z0-9_$]*")
+
 
 def viewer_call(viewport_id: str, method: str, *args: Any) -> rx.event.EventSpec:
     """Call a method on a mounted viewport's imperative API.
 
     Args:
         viewport_id: The ``viewport_id`` of the target viewport.
-        method: The API method name.
+        method: The API method name. It is spliced into the generated
+            JavaScript as a property access, so it must be a plain identifier.
         *args: JSON-serialisable arguments.
 
     Returns:
         An event spec suitable for returning from an event handler or wiring
         to a component event trigger.
+
+    Raises:
+        ValueError: If ``method`` is not a JavaScript identifier. The name
+            cannot be JSON-encoded the way ``viewport_id`` and the arguments
+            are, so anything else would be arbitrary script injected into the
+            page — never pass a value that came from a request.
 
     Example:
         ```python
@@ -311,6 +323,12 @@ def viewer_call(viewport_id: str, method: str, *args: Any) -> rx.event.EventSpec
         ```
 
     """
+    if not _JS_IDENTIFIER.fullmatch(method):
+        msg = (
+            f"viewer_call() method must be a JavaScript identifier, got {method!r}. "
+            "It is interpolated into a script, so it is never taken from untrusted input."
+        )
+        raise ValueError(msg)
     payload = ", ".join(
         str(arg) if isinstance(arg, rx.Var) else rx.Var.create(arg).json() for arg in args
     )
@@ -552,7 +570,3 @@ def remove_measurement(viewport_id: str, uid: str) -> rx.event.EventSpec:
 
     """
     return viewer_call(viewport_id, "removeMeasurement", uid)
-
-
-#: Re-exported so callers can build a default toolbar without a second import.
-DEFAULT_TOOLBAR: tuple[str, ...] = DEFAULT_TOOLS

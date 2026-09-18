@@ -24,6 +24,7 @@ __all__ = [
     "DicomWebError",
     "SeriesSummary",
     "StudySummary",
+    "naturalize",
 ]
 
 # DICOM tag keywords used by QIDO-RS responses, as hexadecimal group+element.

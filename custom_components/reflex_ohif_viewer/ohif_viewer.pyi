@@ -52,6 +52,8 @@ class OhifViewer(rx.Component):
         debug: Var[bool] | bool | None = None,
         use_next_viewports: Var[bool] | bool | None = None,
         viewport_rendering: Var[str] | str | None = None,
+        multimonitor: Var[str] | str | None = None,
+        screen_number: Var[str] | str | None = None,
         extra_params: Var[dict[str, str]] | dict[str, str] | None = None,
         worklist_filters: Var[dict[str, str]] | dict[str, str] | None = None,
         title: Var[str] | str | None = None,
@@ -110,6 +112,8 @@ class OhifViewer(rx.Component):
             debug: Add ``?debug=true``.
             use_next_viewports: Opt into the Cornerstone "next" generic viewport API.
             viewport_rendering: ``cpu``, ``webgl``, ``auto`` or a backend id.
+            multimonitor: Multi-monitor layout id, e.g. ``split`` or a registered custom layout.
+            screen_number: Which screen of the ``multimonitor`` layout this frame shows.
             extra_params: Extra query parameters, merged last.
             worklist_filters: Study-list filters, used when ``study_list`` is true. Keys are OHIF's own: ``patientName``, ``mrn``, ``description``, ``accession``, ``modalities``, ``startDate``, ``endDate``, ``sortBy``, ``sortDirection``, ``pageNumber``, ``resultsPerPage``.
             title: ``title`` attribute of the iframe, for assistive technology.

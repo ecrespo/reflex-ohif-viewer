@@ -18,8 +18,21 @@ from reflex_ohif_viewer import (
     ohif_viewer,
     set_tool,
     set_window_preset,
+    viewer_call,
     window_preset_range,
 )
+
+
+def script_of(spec: rx.event.EventSpec) -> str:
+    """Return the JavaScript `rx.call_script` was handed.
+
+    `str(spec)` is a repr of the whole event spec and gets truncated, so the
+    script is read off the `javascript_code` argument instead.
+    """
+    for name, value in spec.args:
+        if str(name) == "javascript_code":
+            return value._var_value
+    raise AssertionError(f"{spec!r} is not a call_script spec")
 
 
 def test_dicom_viewer_is_client_only():
@@ -95,10 +108,42 @@ def test_imperative_helpers_return_event_specs():
 
 
 def test_imperative_helpers_target_the_named_viewport():
-    script = str(set_tool("my-viewport", "Length"))
+    script = script_of(set_tool("my-viewport", "Length"))
     assert "__rxDicomViewers" in script
     assert "my-viewport" in script
     assert "setTool" in script
+
+
+def test_viewer_call_json_encodes_the_viewport_id_and_arguments():
+    script = script_of(viewer_call('vp"; alert(1); //', "jumpToSlice", 'x"); alert(2); //'))
+    # Both are JSON string literals, so neither can break out of its quotes:
+    # the closing quote of the payload arrives escaped, never bare.
+    assert 'vp\\"; alert(1)' in script
+    assert 'x\\"); alert(2)' in script
+    assert 'vp"; alert(1)' not in script
+    assert 'x"); alert(2)' not in script
+
+
+def test_viewer_call_rejects_a_method_name_that_is_not_an_identifier():
+    # The method is a property access and cannot be JSON-encoded, so it is the
+    # one part of the generated script that has to be validated instead.
+    for method in ("jumpToSlice(0); alert(1); //", "", "toString()", "a-b", "a.b"):
+        with pytest.raises(ValueError, match="JavaScript identifier"):
+            viewer_call("vp", method)
+
+
+def test_viewer_call_accepts_the_identifiers_the_runtime_registers():
+    for method in ("jumpToSlice", "setTool", "_private", "$dollar", "a1"):
+        assert isinstance(viewer_call("vp", method), rx.event.EventSpec)
+
+
+def test_ohif_viewer_exposes_every_parameter_the_url_builder_emits():
+    # A prop the builder knows about but the component does not declare is
+    # unreachable: Reflex only forwards declared props to the frontend.
+    from reflex_ohif_viewer.ohif_viewer import _VIEWER_PARAMS
+
+    declared = set(OhifViewer.get_props())
+    assert set(_VIEWER_PARAMS) <= declared
 
 
 def test_window_preset_lookup():
