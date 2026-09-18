@@ -14,6 +14,12 @@ updates:
       prefix: "ci"
     labels: ["dependencies", "github-actions"]
     target-branch: develop
+    # One pull request for the lot. Ungrouped, a week in which five actions
+    # move opens five pull requests that all touch the same two files and all
+    # have to run the same checks.
+    groups:
+      github-actions:
+        patterns: ["*"]
 
   # The runtime dependencies are deliberately loose (`reflex>=0.9`, `httpx>=0.25`)
   # because this is a library, so these pull requests are about the dev extra
@@ -29,3 +35,9 @@ updates:
       prefix: "build"
     labels: ["dependencies", "python"]
     target-branch: develop
+    groups:
+      python-dev:
+        patterns: ["*"]
+        # A runtime floor is a deliberate compatibility statement, so those
+        # stay separate pull requests worth reading one at a time.
+        dependency-type: development
