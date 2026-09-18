@@ -1,5 +1,12 @@
 # reflex-ohif-viewer
 
+[![CI](https://github.com/ecrespo/reflex-ohif-viewer/actions/workflows/ci.yml/badge.svg)](https://github.com/ecrespo/reflex-ohif-viewer/actions/workflows/ci.yml)
+[![Security](https://github.com/ecrespo/reflex-ohif-viewer/actions/workflows/security.yml/badge.svg)](https://github.com/ecrespo/reflex-ohif-viewer/actions/workflows/security.yml)
+[![CodeQL](https://github.com/ecrespo/reflex-ohif-viewer/actions/workflows/codeql.yml/badge.svg)](https://github.com/ecrespo/reflex-ohif-viewer/actions/workflows/codeql.yml)
+[![PyPI](https://img.shields.io/pypi/v/reflex-ohif-viewer)](https://pypi.org/project/reflex-ohif-viewer/)
+[![Python](https://img.shields.io/pypi/pyversions/reflex-ohif-viewer)](https://pypi.org/project/reflex-ohif-viewer/)
+[![License: MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+
 DICOM viewing for [Reflex](https://reflex.dev) apps, two ways: the
 [OHIF Viewer v3](https://ohif.org/) embedded as an iframe, and
 [Cornerstone3D](https://www.cornerstonejs.org/) — the engine OHIF renders with —
@@ -422,6 +429,19 @@ reflex run
 
 Written and verified against Cornerstone3D **5.10.6**, OHIF Viewer **3.13.8**,
 Reflex **0.9.11** and Python 3.10+. `VERSIONS` carries these at runtime.
+
+## Contributing
+
+Set-up, the checks CI runs, the branching model and how a release is cut are in
+[CONTRIBUTING.md](CONTRIBUTING.md). Pull requests go to `develop`.
+
+## Security
+
+How to report a vulnerability, and what is and is not in scope, are in
+[SECURITY.md](SECURITY.md). Two things in this API are credential-adjacent and
+worth reading about before you deploy: `ohif_viewer(token=...)`, which puts a
+bearer token in a URL, and the `headers` argument shared by `dicom_viewer` and
+`DicomWebClient`.
 
 ## Licence
 

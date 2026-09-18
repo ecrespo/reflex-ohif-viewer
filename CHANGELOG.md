@@ -13,7 +13,8 @@ First release.
 - **`ohif_viewer`** — embeds a self-hosted OHIF Viewer v3 build in an iframe,
   with every viewer and study-list query parameter exposed as a prop:
   studies and priors, series filters, initial series and instance, hanging
-  protocol and stage, token, `configUrl`, customization, theme and debug.
+  protocol and stage, token, `configUrl`, customization, theme, debug and the
+  `multimonitor` / `screenNumber` pair.
   Events: `on_viewer_load`, `on_url_change`, `on_viewer_message`.
 - **`build_ohif_url`** — the same URL builder as a plain function, so links can
   be computed, logged and unit-tested server-side. The Python and JavaScript
@@ -44,6 +45,35 @@ First release.
   studies whose series UIDs were verified against the live server.
 - **A five-page demo app** — overview, native viewport with a live measurement
   table, MPR, the OHIF iframe with a URL builder, and a configuration generator.
+
+### Project
+
+- **Continuous integration** — `ci.yml` runs ruff, checks that the generated
+  `.pyi` stubs still match the component source, runs the suite on Python 3.10
+  to 3.13 with Node present so the URL-builder parity test does not skip, and
+  builds the distribution, installs the wheel into a clean environment and
+  imports it to prove the frontend assets are really packaged.
+- **Security validation** — `security.yml` runs Bandit over the published
+  package, `pip-audit` over the installed dependency tree, Gitleaks over the
+  full history, and a dependency review on every pull request; `codeql.yml`
+  analyses both the Python and the JavaScript halves. The two scheduled runs
+  catch advisories published against code that has not changed.
+- **Release automation** — `release.yml` is triggered by a `vX.Y.Z` tag. It
+  refuses to run unless the tag, `pyproject.toml` and this changelog agree,
+  re-runs the checks against the tagged commit, then publishes to PyPI through
+  Trusted Publishing (OpenID Connect — the repository holds no PyPI token) with
+  build attestations, and opens a GitHub Release carrying that version's
+  changelog section.
+- **Packaging** — the licence is declared as a PEP 639 SPDX expression rather
+  than the deprecated classifier, and `MANIFEST.in` puts the changelog, the
+  security policy and the contributing guide into the sdist.
+
+### Security notes
+
+- `viewer_call` validates its `method` argument as a JavaScript identifier. The
+  viewport id and the arguments are JSON-encoded on their way into the generated
+  script, but a method name is a property access and cannot be, so it was the
+  one place a caller could have spliced script into the page.
 
 ### Notes on the upstream projects
 

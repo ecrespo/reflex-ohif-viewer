@@ -1,0 +1,100 @@
+# Security validation: Python SAST, dependency advisories, secret scanning and
+# a review of what a pull request adds to the dependency graph.
+name: Security
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  schedule:
+    # Mondays at 06:00 UTC. Advisories are published against code that has not
+    # changed, so the audit has to run on a clock and not only on a push.
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: security-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  sast:
+    name: Bandit (Python SAST)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install bandit
+        run: |
+          python -m pip install --upgrade pip
+          pip install "bandit[toml]>=1.7"
+
+      # The scanned tree is the published package only; the exclusions live in
+      # [tool.bandit] in pyproject.toml.
+      - name: Scan the package
+        run: bandit -c pyproject.toml -r custom_components --severity-level low
+
+  dependencies:
+    name: pip-audit (dependency advisories)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      # pip itself is part of the environment pip-audit reports on, and the
+      # runner's bundled pip is usually a few advisories behind.
+      - name: Install the project into a clean environment
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install .
+          pip install pip-audit
+
+      # No --strict: it also fails on a package that cannot be resolved on
+      # PyPI, and this project itself is one of those until a release exists.
+      # Without it, pip-audit still exits non-zero on any known advisory.
+      - name: Audit the installed dependency tree
+        run: pip-audit --progress-spinner off
+
+  secrets:
+    name: Gitleaks (secret scanning)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Gitleaks scans history, not just the working tree, so it needs it.
+          fetch-depth: 0
+
+      - name: Scan the repository and its history
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-review:
+    name: Dependency review
+    # Only a pull request has a "before" and an "after" to compare.
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+          comment-summary-in-pr: on-failure
+          # MIT, and these are the licences a dependency may not carry into it.
+          deny-licenses: AGPL-3.0, AGPL-3.0-only, AGPL-3.0-or-later, GPL-3.0-only

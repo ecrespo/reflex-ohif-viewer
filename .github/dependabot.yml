@@ -1,0 +1,31 @@
+version: 2
+
+updates:
+  # The workflows pin actions by major tag, which still leaves the pinned major
+  # behind when a new one lands; this is what notices.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+    labels: ["dependencies", "github-actions"]
+    target-branch: develop
+
+  # The runtime dependencies are deliberately loose (`reflex>=0.9`, `httpx>=0.25`)
+  # because this is a library, so these pull requests are about the dev extra
+  # and about being told when a floor needs raising.
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "build"
+    labels: ["dependencies", "python"]
+    target-branch: develop
