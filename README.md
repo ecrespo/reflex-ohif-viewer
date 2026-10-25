@@ -428,7 +428,7 @@ reflex run
 ## Versions
 
 Written and verified against Cornerstone3D **5.10.6**, OHIF Viewer **3.13.8**,
-Reflex **0.9.11** and Python 3.10+. `VERSIONS` carries these at runtime.
+Reflex **0.10.0** and Python 3.11+. `VERSIONS` carries these at runtime.
 
 ## Contributing
 

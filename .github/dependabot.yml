@@ -21,7 +21,7 @@ updates:
       github-actions:
         patterns: ["*"]
 
-  # The runtime dependencies are deliberately loose (`reflex>=0.9`, `httpx>=0.25`)
+  # The runtime dependencies are deliberately loose (`reflex>=0.10`, `httpx>=0.25`)
   # because this is a library, so these pull requests are about the dev extra
   # and about being told when a floor needs raising.
   - package-ecosystem: pip

@@ -20,6 +20,11 @@ concurrency:
 permissions:
   contents: read
 
+# Run every JavaScript action on the Node 24 runtime, ahead of GitHub retiring
+# Node 20 on hosted runners, so a stale action fails here rather than later.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   sast:
     name: Bandit (Python SAST)
