@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Existing tag to release, e.g. v0.1.0"
+        description: "Existing tag to release, e.g. v0.2.0"
         required: true
         type: string
 
@@ -22,6 +22,11 @@ concurrency:
 
 permissions:
   contents: read
+
+# Run every JavaScript action on the Node 24 runtime, ahead of GitHub retiring
+# Node 20 on hosted runners, so a stale action fails here rather than later.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   verify:
@@ -80,7 +85,7 @@ jobs:
 
       - uses: actions/setup-node@v7
         with:
-          node-version: "22"
+          node-version: "24"
 
       # The tagged commit is released, not the commit CI last saw, so the
       # checks run again here against exactly what is about to be published.

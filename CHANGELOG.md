@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
 [semantic versioning](https://semver.org/).
 
+## [0.2.0] — 2026-10-24
+
+### Changed
+
+- **Reflex 0.10** — the runtime floor is now `reflex>=0.10.0`, the current
+  Reflex release. The components, the generated `.pyi` stubs, the Vite patch
+  applied by `CornerstonePlugin` and the five-page demo app were re-verified
+  against it; the demo's `requirements.txt` follows.
+- **Python 3.11+** — Python 3.10 is no longer supported, matching Reflex 0.10's
+  own `requires-python`. The classifiers, ruff's target version and the CI test
+  matrix (now 3.11 to 3.13) were updated with it.
+- **Build backend** — the `setuptools` floor in `[build-system]` is raised to
+  78.1.1, the first release clear of the published path-traversal advisory.
+
+### Project
+
+- **Node 24 in CI** — the test and release jobs run the URL-builder parity test
+  under Node 24, and every workflow sets `FORCE_JAVASCRIPT_ACTIONS_TO_NODE24` so
+  the JavaScript actions themselves run on the Node 24 runtime.
+
 ## [0.1.0] — 2026-09-17
 
 First release.
@@ -96,4 +116,5 @@ than the documentation:
   `react-cornerstone-viewport` targets the abandoned legacy cornerstone, and
   `@ohif/ui-next` contains no viewport code.
 
+[0.2.0]: https://github.com/ecrespo/reflex-ohif-viewer/releases/tag/v0.2.0
 [0.1.0]: https://github.com/ecrespo/reflex-ohif-viewer/releases/tag/v0.1.0

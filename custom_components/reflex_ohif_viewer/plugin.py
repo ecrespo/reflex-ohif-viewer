@@ -50,7 +50,7 @@ _VITE_CONFIG = "vite.config.js"
 _MARKER = "reflex-ohif-viewer:cornerstone"
 
 # The anchor is the first line of the object literal returned by
-# `defineConfig`, which every Reflex 0.9 vite config template contains.
+# `defineConfig`, which every Reflex 0.9 and 0.10 vite config template contains.
 _ANCHOR = 'base: "'
 
 #: Packages whose pre-bundled chunk would eagerly evaluate Node-only modules.
